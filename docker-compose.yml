@@ -1,0 +1,80 @@
+services:
+  # ==========================================
+  # Database Service (MongoDB 7.0)
+  # ==========================================
+  mongo:
+    image: mongo:7.0
+    container_name: ecom_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ecom_db
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - mern_net
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.runCommand(\"ping\").ok' --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ==========================================
+  # Backend API Service (Express.js)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ecom_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/ecom_db
+      NODE_ENV: production
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - mern_net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================
+  # Frontend Client Service (React + Nginx)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecom_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - mern_net
+
+# ==========================================
+# Isolated Bridge Network
+# ==========================================
+networks:
+  mern_net:
+    driver: bridge
+
+# ==========================================
+# Persistent Volumes
+# ==========================================
+volumes:
+  mongo_data:
+    driver: local

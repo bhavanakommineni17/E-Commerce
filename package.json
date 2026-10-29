@@ -1,0 +1,14 @@
+{
+  "name": "ecom-root",
+  "version": "1.0.0",
+  "description": "Dockerized MERN Stack E-Commerce Platform",
+  "scripts": {
+    "test": "npm test --prefix backend && npm test --prefix frontend && node test-e2e.js",
+    "test:backend": "npm test --prefix backend",
+    "test:frontend": "npm test --prefix frontend",
+    "test:e2e": "node test-e2e.js",
+    "compose:up": "docker compose up -d --build",
+    "compose:down": "docker compose down",
+    "compose:logs": "docker compose logs -f"
+  }
+}
